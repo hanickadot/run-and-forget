@@ -29,12 +29,14 @@ private:
 		}
 		void remove(unsigned int id) {
 			if (!done.load()) {
-				std::lock_guard<std::mutex> lock{mutex};
-				auto it = threads.find(id);
-				if (it != threads.end()) {
-					it->second.detach();
-					threads.erase(it);
-					//std::cout << "erasing thread #"<<id<<" prematurely.\n";
+				std::unique_lock<std::mutex> lock{mutex, std::try_to_lock};
+				if (lock.owns_lock()) {
+					auto it = threads.find(id);
+					if (it != threads.end()) {
+						it->second.detach();
+						threads.erase(it);
+						//std::cout << "erasing thread #"<<id<<" prematurely.\n";
+					}
 				}
 			}
 		}
